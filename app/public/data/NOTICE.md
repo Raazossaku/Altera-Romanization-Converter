@@ -19,7 +19,6 @@ These files have been modified from the upstream versions. Changes so far:
 - Reformatted into the tab-separated `Laoguoyin.txt` / `LaoguoyinPhrases.txt` layout used
   by this project.
 - Syllables with a v- initial (微 initial) were respelled with the Zhuyin initial ㄪ
-  instead of ㄨ-forms (for example `ㄨㄟ` → `ㄪㄟ`, `ㄨㄣ` → `ㄪㄣ`, `ㄨ` → `ㄪㄨ`), in both
-  files, checked against the 《校》 initial classes recorded in the data (2026-11).
-- 碔 and 珷 changed from `ㄨˇ` to `ㄪㄨˇ` (2026-11).
+  instead of ㄨ-forms (for example `ㄨㄟ` → `ㄪㄟ`, `ㄨㄣ` → `ㄪㄣ`, `ㄨ` → `ㄪㄨ`) in all cases, in both
+  files (2026-11).
 - Removed a stray Latin "y" from the reading of 鿗 (`ㄧ yㄧ ㄙㄨ ㄙㄧ` → `ㄧ ㄧ ㄙㄨ ㄙㄧ`) (2026-11).
