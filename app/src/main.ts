@@ -1,8 +1,10 @@
 import './style.css';
 import { lects } from './lects/index.ts';
+import { renderOptions } from './options-panel.ts';
 import { defaults, type Settings } from './options.ts';
-import { renderMessage, renderOptions, renderResults } from './render.ts';
-import type { Analysis } from './types.ts';
+import { present } from './present.ts';
+import { copyText, renderMessage, renderResults } from './render.ts';
+import type { Analysis, Lect } from './types.ts';
 
 const base = import.meta.env.BASE_URL;
 
@@ -30,24 +32,32 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="input-panel">
         <label>
           Altera Lect
-          <select id="lect"></select>
+          <select id="lect"><button><selectedcontent></selectedcontent></button></select>
         </label>
         <label>
           Input Text
-          <textarea id="input" rows="5" placeholder="Enter text...">震旦國音正語</textarea>
+          <textarea id="input" rows="5" placeholder="Enter text...">一十百千萬億兆京</textarea>
         </label>
       </div>
       <aside class="options" id="options" aria-label="Options"></aside>
     </div>
-    <h2>Romanization Candidates</h2>
+    <div class="results-head">
+      <h2>Romanization Candidates</h2>
+      <div class="copy">
+        <button type="button" id="copy-romanization">Copy romanization</button>
+        <button type="button" id="copy-script"></button>
+      </div>
+    </div>
     <section id="results"></section>
   </main>
   <footer>
     <p>Built with TypeScript and Vite.</p>
-    <p>
+    <p class="notes">
       Laoguoyin data: GPL-3.0, derived from
-      <a href="https://github.com/baopaau/rime-bepemefeve">rime-bepemefeve</a>.
-      <a href="${base}data/NOTICE.md">Notice</a>
+      <a href="https://github.com/baopaau/rime-bepemefeve">rime-bepemefeve</a>.<br />
+      Korean data: BSD-3-Clause, derived from
+      <a href="https://github.com/libhangul/libhangul">libhangul</a>.
+      <a href="${base}NOTICE.md">Notice</a>
     </p>
   </footer>
 `;
@@ -56,19 +66,63 @@ const select = document.querySelector<HTMLSelectElement>('#lect')!;
 const input = document.querySelector<HTMLTextAreaElement>('#input')!;
 const results = document.querySelector<HTMLElement>('#results')!;
 const optionsPanel = document.querySelector<HTMLElement>('#options')!;
+const copyRomanization = document.querySelector<HTMLButtonElement>('#copy-romanization')!;
+const copyScript = document.querySelector<HTMLButtonElement>('#copy-script')!;
 
 const settings: Settings = { ...defaults };
-let analysis: Analysis[] | null = null;
+interface Outcome {
+  lect: Lect;
+  results: Analysis[];
+}
+
+let outcome: Outcome | null = null;
+let presented: Analysis[] = [];
 let message = '';
 
 for (const lect of lects) {
-  select.add(new Option(lect.name, lect.id));
+  const option = new Option('', lect.id);
+  const name = document.createElement('span');
+  name.textContent = lect.name;
+  option.append(name);
+  if (lect.detail) {
+    const detail = document.createElement('span');
+    detail.className = 'detail';
+    detail.textContent = ` (${lect.detail})`;
+    option.append(detail);
+  }
+  select.add(option);
+}
+
+function currentLect(): Lect {
+  return lects.find((l) => l.id === select.value) ?? lects[0]!;
+}
+
+function updateCopy(): void {
+  copyRomanization.textContent = 'Copy romanization';
+  copyScript.textContent = `Copy ${(outcome?.lect ?? currentLect()).scriptName}`;
+  copyScript.hidden = !settings.showScript;
+  copyRomanization.disabled = presented.length === 0;
+  copyScript.disabled = presented.length === 0;
 }
 
 function show(): void {
+  presented = outcome ? present(outcome.results, settings, outcome.lect) : [];
   results.replaceChildren(
-    analysis ? renderResults(analysis, settings.view) : renderMessage(message),
+    outcome ? renderResults(presented, settings, outcome.lect) : renderMessage(message),
   );
+  updateCopy();
+}
+
+function copy(button: HTMLButtonElement, layer: 'script' | 'romanization'): void {
+  if (!outcome) return;
+  void navigator.clipboard.writeText(copyText(presented, layer, outcome.lect)).then(() => {
+    button.textContent = 'Copied';
+    setTimeout(updateCopy, 1200);
+  });
+}
+
+function mountOptions(): void {
+  optionsPanel.replaceChildren(renderOptions(settings, currentLect(), show));
 }
 
 let latest = 0;
@@ -78,18 +132,18 @@ async function update(): Promise<void> {
   const request = ++latest;
   const lect = lects.find((l) => l.id === select.value);
   if (!lect || input.value.trim() === '') {
-    analysis = null;
+    outcome = null;
     message = 'Type some text above to see the results.';
     show();
     return;
   }
-  analysis = null;
+  outcome = null;
   message = 'Looking up phrases and characters…';
   show();
   try {
     const found = await lect.analyze(input.value);
     if (request !== latest) return;
-    analysis = found;
+    outcome = { lect, results: found };
     show();
   } catch (error) {
     if (request !== latest) return;
@@ -102,7 +156,12 @@ function schedule(): void {
   timer = window.setTimeout(update, 200);
 }
 
-optionsPanel.append(renderOptions(settings, show));
-select.addEventListener('change', schedule);
+copyRomanization.addEventListener('click', () => copy(copyRomanization, 'romanization'));
+copyScript.addEventListener('click', () => copy(copyScript, 'script'));
+mountOptions();
+select.addEventListener('change', () => {
+  mountOptions();
+  schedule();
+});
 input.addEventListener('input', schedule);
 update();

@@ -154,10 +154,27 @@ function convertSyllable(syllable: string): string {
   return (finals.get(rest) ?? fallback)(base, tone);
 }
 
-export function lgyToPinyin(transcription: string): string {
-  return transcription
+export function lgyToPinyin(script: string): string {
+  return script
     .split(/\s+/)
     .filter((syllable) => syllable !== '')
     .map(convertSyllable)
     .join(' ');
+}
+
+const stripMarks = (syllable: string): string =>
+  syllable.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+function needsApostrophe(previous: string, next: string): boolean {
+  const before = stripMarks(previous);
+  const after = stripMarks(next);
+  if (/^[aeo]/.test(after)) return true;
+  return before.endsWith('n') && /^[gj]/.test(after);
+}
+
+export function joinPinyin(syllables: string[]): string {
+  return syllables.reduce((joined, syllable, i) => {
+    const mark = i > 0 && needsApostrophe(syllables[i - 1]!, syllable) ? "'" : '';
+    return joined + mark + syllable;
+  }, '');
 }

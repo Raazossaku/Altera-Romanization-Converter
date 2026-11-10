@@ -1,18 +1,6 @@
-import { options, type Settings } from './options.ts';
-import type { Analysis, Reading } from './types.ts';
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className = '',
-  text = '',
-  children: Node[] = [],
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  node.className = className;
-  node.textContent = text;
-  node.append(...children);
-  return node;
-}
+import { el } from './dom.ts';
+import type { Settings } from './options.ts';
+import type { Analysis, Lect, Reading } from './types.ts';
 
 function tier(r: Reading): string {
   if (r.rare) return 'rare';
@@ -25,28 +13,55 @@ function tier(r: Reading): string {
   return 'p1';
 }
 
-function reading(r: Reading): HTMLElement {
-  const syllables = r.transcription
-    .split(/\s+/)
-    .flatMap((s, i) => [...(i > 0 ? [document.createTextNode(' ')] : []), el('span', 'syllable', s)]);
+function syllables(text: string): string[] {
+  return text.split(/\s+/);
+}
+
+function shownScript(lect: Lect, r: Reading): string {
+  return syllables(r.script).join(lect.scriptSeparator);
+}
+
+function shownRomanization(lect: Lect, r: Reading): string {
+  return lect.joinRomanization(syllables(r.romanization));
+}
+
+export function copyText(
+  results: Analysis[],
+  layer: 'script' | 'romanization',
+  lect: Lect,
+): string {
+  return results
+    .map(({ text, readings }) => {
+      const top = readings[0];
+      if (!top) return text;
+      return layer === 'script' ? shownScript(lect, top) : shownRomanization(lect, top);
+    })
+    .join(' ');
+}
+
+function reading(r: Reading, lect: Lect): HTMLElement {
+  const parts = syllables(r.script).flatMap((syllable, i) => [
+    ...(i > 0 && lect.scriptSeparator ? [document.createTextNode(lect.scriptSeparator)] : []),
+    el('span', 'syllable', syllable),
+  ]);
   return el('li', `reading ${tier(r)}`, '', [
-    el('span', 'transcription', '', syllables),
-    el('span', 'converted', r.converted),
+    el('span', 'script', '', parts),
+    el('span', 'romanization', shownRomanization(lect, r)),
   ]);
 }
 
-function card(analysis: Analysis): HTMLElement {
+function card(analysis: Analysis, lect: Lect): HTMLElement {
   const body =
     analysis.readings.length > 0
-      ? el('ul', 'readings', '', analysis.readings.map(reading))
+      ? el('ul', 'readings', '', analysis.readings.map((r) => reading(r, lect)))
       : el('p', 'empty', 'No data');
   return el('div', 'card', '', [el('div', 'glyph', analysis.text), body]);
 }
 
-export interface Unit {
+interface Unit {
   char: string;
-  zhuyin: string;
-  romanized: string;
+  script: string;
+  romanization: string;
   title: string;
 }
 
@@ -54,26 +69,31 @@ export function units(results: Analysis[]): Unit[] {
   return results.flatMap(({ text, readings }) => {
     const chars = Array.from(text);
     const top = readings[0];
-    const title = readings.map((r) => `${r.transcription} (${r.converted})`).join('\n');
-    const zhuyin = top?.transcription.split(/\s+/) ?? [];
-    const romanized = top?.converted.split(/\s+/) ?? [];
+    const title = readings.map((r) => `${r.script} (${r.romanization})`).join('\n');
+    const scripts = top ? syllables(top.script) : [];
+    const romanizations = top ? syllables(top.romanization) : [];
     return chars.map((char, i) => {
-      if (!top) return { char, zhuyin: '', romanized: '', title };
+      if (!top) return { char, script: '', romanization: '', title };
       if (chars.length === 1) {
-        return { char, zhuyin: top.transcription, romanized: top.converted, title };
+        return { char, script: top.script, romanization: top.romanization, title };
       }
-      if (zhuyin.length === chars.length) {
-        return { char, zhuyin: zhuyin[i] ?? '', romanized: romanized[i] ?? '', title };
+      if (scripts.length === chars.length) {
+        return {
+          char,
+          script: scripts[i] ?? '',
+          romanization: romanizations[i] ?? '',
+          title,
+        };
       }
-      return { char, zhuyin: '', romanized: '', title };
+      return { char, script: '', romanization: '', title };
     });
   });
 }
 
 function unit(u: Unit): HTMLElement {
   const node = el('div', 'unit', '', [
-    el('span', 'zhuyin', u.zhuyin),
-    el('span', 'romanized', u.romanized),
+    el('span', 'script', u.script),
+    el('span', 'romanization', u.romanization),
     el('span', 'hanzi', u.char),
   ]);
   node.title = u.title;
@@ -103,7 +123,7 @@ function paged<T>(
   return el('div', '', '', [list, more]);
 }
 
-const LAYERS = ['zhuyin', 'romanized', 'hanzi'];
+const LAYERS = ['script', 'romanization', 'hanzi'];
 
 function renderRuby(results: Analysis[]): HTMLElement {
   const view = paged(units(results), unit, 'ruby', 300);
@@ -128,30 +148,15 @@ function renderRuby(results: Analysis[]): HTMLElement {
   return view;
 }
 
-export function renderResults(results: Analysis[], view: Settings['view']): HTMLElement {
-  return view === 'ruby' ? renderRuby(results) : paged(results, card, 'cards', 100);
+export function renderResults(results: Analysis[], settings: Settings, lect: Lect): HTMLElement {
+  const view =
+    settings.view === 'ruby'
+      ? renderRuby(results)
+      : paged(results, (analysis) => card(analysis, lect), 'cards', 100);
+  view.dataset.script = settings.showScript ? 'on' : 'off';
+  return view;
 }
 
 export function renderMessage(text: string, className = ''): HTMLElement {
   return el('p', `message ${className}`, text);
-}
-
-export function renderOptions(settings: Settings, onChange: () => void): HTMLElement {
-  const groups = options.map((option) => {
-    const row = el('div', 'segmented');
-    for (const choice of option.choices) {
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = option.id;
-      input.value = choice.value;
-      input.checked = settings[option.id] === choice.value;
-      input.addEventListener('change', () => {
-        (settings as unknown as Record<string, string>)[option.id] = choice.value;
-        onChange();
-      });
-      row.append(el('label', 'seg', '', [input, el('span', '', choice.label)]));
-    }
-    return el('fieldset', 'option', '', [el('legend', '', option.label), row]);
-  });
-  return el('div', 'option-list', '', [el('p', 'panel-title', 'Options'), ...groups]);
 }

@@ -13,7 +13,8 @@ Raazossaku in Python, and the web app was developed from it with the help of Cla
 | Folder | What it is |
 | --- | --- |
 | `app/` | The web app: Vite + TypeScript, tests with Vitest. |
-| `app/public/data/` | Laoguoyin character and phrase data (GPL-3.0, see below). |
+| `app/data/` | Source data for each lect, processed into JSON at build time. |
+| `app/public/` | Static files published with the site, including the data licence and notice. |
 
 ## Develop
 
@@ -30,6 +31,8 @@ npm run build    # type-check and build to app/dist
 ## Licences
 
 - Application code: [MIT](LICENSE).
-- Data in `app/public/data/`: GPL-3.0, derived from
+- Laoguoyin data in `app/data/laoguoyin/`: GPL-3.0, derived from
   [baopaau/rime-bepemefeve](https://github.com/baopaau/rime-bepemefeve).
-  See [`app/public/data/NOTICE.md`](app/public/data/NOTICE.md).
+- Korean data in `app/data/korean/`: BSD 3-clause, from
+  [libhangul](https://github.com/libhangul/libhangul).
+- Details and modifications: [`app/public/NOTICE.md`](app/public/NOTICE.md).

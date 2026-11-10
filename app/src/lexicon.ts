@@ -1,32 +1,31 @@
 import type { Candidate } from './types.ts';
 
+export const RARE = -1;
+
 export interface Lexicon {
   entries: Map<string, Candidate[]>;
   maxLength: number;
 }
 
-export interface Segment {
+export interface Lexicons {
+  chars: Lexicon;
+  phrases: Lexicon;
+}
+
+interface Segment {
   text: string;
   candidates: Candidate[];
 }
 
-function rows(text: string): string[][] {
-  return text
-    .split('\n')
-    .filter((line) => line.trim() !== '' && !line.startsWith('#'))
-    .map((line) => line.split('\t').map((part) => part.trim()))
-    .filter((parts) => parts.length >= 2 && parts[0] !== '' && parts[1] !== '');
+type LexiconJson = Record<string, [string, number][]>;
+
+export interface LexiconFile {
+  chars: LexiconJson;
+  phrases: LexiconJson;
+  spelled: string[];
 }
 
-function add(entries: Map<string, Candidate[]>, key: string, candidate: Candidate): void {
-  const list = entries.get(key) ?? [];
-  if (!list.some((c) => c.transcription === candidate.transcription)) {
-    list.push(candidate);
-    entries.set(key, list);
-  }
-}
-
-function lexicon(entries: Map<string, Candidate[]>): Lexicon {
+export function createLexicon(entries: Map<string, Candidate[]>): Lexicon {
   let maxLength = 0;
   for (const key of entries.keys()) {
     maxLength = Math.max(maxLength, Array.from(key).length);
@@ -34,56 +33,58 @@ function lexicon(entries: Map<string, Candidate[]>): Lexicon {
   return { entries, maxLength };
 }
 
-export type LexiconJson = Record<string, [string, number][]>;
-
-export function serialize(source: Lexicon): LexiconJson {
+function serialize(source: Map<string, Candidate[]>): LexiconJson {
   const out: LexiconJson = {};
-  for (const [key, candidates] of source.entries) {
-    out[key] = candidates.map((c) => [c.transcription, c.percentage]);
+  for (const [key, candidates] of source) {
+    out[key] = candidates.map((c) => [c.script, c.percentage]);
   }
   return out;
 }
 
-export function deserialize(data: LexiconJson): Lexicon {
+function deserialize(data: LexiconJson): Map<string, Candidate[]> {
   const entries = new Map<string, Candidate[]>();
   for (const [key, candidates] of Object.entries(data)) {
     entries.set(
       key,
-      candidates.map(([transcription, percentage]) => ({
-        transcription,
-        rare: percentage === -1,
+      candidates.map(([script, percentage]) => ({
+        script,
+        rare: percentage === RARE,
         percentage,
       })),
     );
   }
-  return lexicon(entries);
+  return entries;
 }
 
-export function parseCharacters(text: string): Lexicon {
-  const entries = new Map<string, Candidate[]>();
-  for (const [char, transcription, stats = ''] of rows(text)) {
-    const rare = stats === '#*';
-    const percent = stats.endsWith('%') ? parseInt(stats, 10) : NaN;
-    const percentage = rare ? -1 : Number.isNaN(percent) ? 0 : percent;
-    add(entries, char!, { transcription: transcription!, rare, percentage });
-  }
-  for (const list of entries.values()) {
-    list.sort((a, b) => b.percentage - a.percentage);
-  }
-  return lexicon(entries);
+function spelledReading(key: string, chars: Lexicon): string | undefined {
+  const readings = Array.from(key).map((char) => chars.entries.get(char));
+  if (readings.some((candidates) => candidates?.length !== 1)) return undefined;
+  return readings.map((candidates) => candidates![0]!.script).join(' ');
 }
 
-export function parsePhrases(text: string): Lexicon {
-  const entries = new Map<string, Candidate[]>();
-  for (const [phrase, transcription, stats = ''] of rows(text)) {
-    const percent = parseInt(stats, 10);
-    add(entries, phrase!, {
-      transcription: transcription!,
-      rare: false,
-      percentage: Number.isNaN(percent) ? 100 : percent,
-    });
+export function pack({ chars, phrases }: Lexicons): LexiconFile {
+  const kept = new Map<string, Candidate[]>();
+  const spelled: string[] = [];
+  for (const [key, candidates] of phrases.entries) {
+    const only = candidates[0]!;
+    const redundant =
+      candidates.length === 1 &&
+      only.percentage === 100 &&
+      spelledReading(key, chars) === only.script;
+    if (redundant) spelled.push(key);
+    else kept.set(key, candidates);
   }
-  return lexicon(entries);
+  return { chars: serialize(chars.entries), phrases: serialize(kept), spelled };
+}
+
+export function unpack(file: LexiconFile): Lexicons {
+  const chars = createLexicon(deserialize(file.chars));
+  const phrases = deserialize(file.phrases);
+  for (const key of file.spelled) {
+    const script = spelledReading(key, chars);
+    if (script !== undefined) phrases.set(key, [{ script, rare: false, percentage: 100 }]);
+  }
+  return { chars, phrases: createLexicon(phrases) };
 }
 
 export function segment(input: string, chars: Lexicon, phrases: Lexicon): Segment[] {

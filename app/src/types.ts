@@ -1,11 +1,11 @@
 export interface Candidate {
-  transcription: string;
+  script: string;
   rare: boolean;
   percentage: number;
 }
 
 export interface Reading extends Candidate {
-  converted: string;
+  romanization: string;
 }
 
 export interface Analysis {
@@ -16,5 +16,10 @@ export interface Analysis {
 export interface Lect {
   id: string;
   name: string;
+  detail?: string;
+  scriptName: string;
+  scriptSeparator: string;
+  hasRarity?: boolean;
+  joinRomanization: (syllables: string[]) => string;
   analyze(input: string): Promise<Analysis[]>;
 }
