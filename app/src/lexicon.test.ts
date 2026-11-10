@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCharacters, parsePhrases, segment } from './lexicon.ts';
+import { deserialize, parseCharacters, parsePhrases, segment, serialize } from './lexicon.ts';
 
 const chars = parseCharacters(
   [
@@ -33,6 +33,19 @@ describe('parsePhrases', () => {
 
   it('records the longest phrase length', () => {
     expect(phrases.maxLength).toBe(3);
+  });
+});
+
+describe('serialize and deserialize', () => {
+  it('round-trips characters, including rare readings', () => {
+    const copy = deserialize(JSON.parse(JSON.stringify(serialize(chars))));
+    expect(copy.entries).toEqual(chars.entries);
+  });
+
+  it('round-trips phrases and keeps the longest length', () => {
+    const copy = deserialize(JSON.parse(JSON.stringify(serialize(phrases))));
+    expect(copy.entries).toEqual(phrases.entries);
+    expect(copy.maxLength).toBe(phrases.maxLength);
   });
 });
 

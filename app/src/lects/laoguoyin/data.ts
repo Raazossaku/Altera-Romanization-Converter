@@ -1,28 +1,23 @@
-import { parseCharacters, parsePhrases, type Lexicon } from '../../lexicon.ts';
+import { deserialize, type Lexicon, type LexiconJson } from '../../lexicon.ts';
 
 interface Data {
   chars: Lexicon;
   phrases: Lexicon;
 }
 
-async function fetchText(name: string): Promise<string> {
-  const response = await fetch(`${import.meta.env.BASE_URL}data/${name}`);
+async function fetchData(): Promise<Data> {
+  const response = await fetch(`${import.meta.env.BASE_URL}generated/laoguoyin.json`);
   if (!response.ok) {
-    throw new Error(`Could not load ${name} (HTTP ${response.status})`);
+    throw new Error(`Could not load laoguoyin.json (HTTP ${response.status})`);
   }
-  return response.text();
+  const json = (await response.json()) as { chars: LexiconJson; phrases: LexiconJson };
+  return { chars: deserialize(json.chars), phrases: deserialize(json.phrases) };
 }
 
 let loading: Promise<Data> | null = null;
 
 export function loadData(): Promise<Data> {
-  loading ??= Promise.all([
-    fetchText('Laoguoyin.txt'),
-    fetchText('LaoguoyinPhrases.txt'),
-  ]).then(([chars, phrases]) => ({
-    chars: parseCharacters(chars),
-    phrases: parsePhrases(phrases),
-  }));
+  loading ??= fetchData();
   loading.catch(() => {
     loading = null;
   });

@@ -5,7 +5,10 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "build:data": "node scripts/build-data.ts",
+    "predev": "npm run build:data",
     "dev": "vite",
+    "prebuild": "npm run build:data",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run"

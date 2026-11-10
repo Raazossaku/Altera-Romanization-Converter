@@ -34,6 +34,31 @@ function lexicon(entries: Map<string, Candidate[]>): Lexicon {
   return { entries, maxLength };
 }
 
+export type LexiconJson = Record<string, [string, number][]>;
+
+export function serialize(source: Lexicon): LexiconJson {
+  const out: LexiconJson = {};
+  for (const [key, candidates] of source.entries) {
+    out[key] = candidates.map((c) => [c.transcription, c.percentage]);
+  }
+  return out;
+}
+
+export function deserialize(data: LexiconJson): Lexicon {
+  const entries = new Map<string, Candidate[]>();
+  for (const [key, candidates] of Object.entries(data)) {
+    entries.set(
+      key,
+      candidates.map(([transcription, percentage]) => ({
+        transcription,
+        rare: percentage === -1,
+        percentage,
+      })),
+    );
+  }
+  return lexicon(entries);
+}
+
 export function parseCharacters(text: string): Lexicon {
   const entries = new Map<string, Candidate[]>();
   for (const [char, transcription, stats = ''] of rows(text)) {
