@@ -3,6 +3,9 @@
 A client-side web app for converting between romanization systems ("lects") used for the
 Sinosphere states of Atlas Altera (Project Altera). It runs entirely in the browser.
 
+Created by Raazossaku. The original Laoguoyin converter was written in full by
+Raazossaku in Python, and the web app was developed from it with the help of Claude.
+
 ## Layout
 
 | Folder | What it is |
