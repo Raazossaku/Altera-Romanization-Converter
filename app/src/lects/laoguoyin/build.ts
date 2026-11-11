@@ -1,5 +1,5 @@
-import { createLexicon, RARE, type Lexicon, type Lexicons } from '../../lexicon.ts';
-import type { Candidate } from '../../types.ts';
+import { createLexicon, RARE, type Lexicon, type Lexicons } from '../../core/lexicon.ts';
+import type { Candidate } from '../../core/types.ts';
 
 function rows(text: string): string[][] {
   return text

@@ -1,5 +1,5 @@
-import { createLexicon, type Lexicons } from '../../lexicon.ts';
-import type { Candidate } from '../../types.ts';
+import { createLexicon, type Lexicons } from '../../core/lexicon.ts';
+import type { Candidate } from '../../core/types.ts';
 import { dropFinal, hasSaiSiot, lenite } from './hangul.ts';
 
 const HAN = /^\p{Script=Han}+$/u;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pack } from '../../lexicon.ts';
+import { pack } from '../../core/lexicon.ts';
 import { buildJosonese } from './build.ts';
 
 const sample = `

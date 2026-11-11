@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { pack, unpack, type Lexicons } from '../src/lexicon.ts';
+import { pack, unpack, type Lexicons } from '../src/core/lexicon.ts';
 import { buildJosonese } from '../src/lects/josonese/build.ts';
 import { buildLaoguoyin } from '../src/lects/laoguoyin/build.ts';
 

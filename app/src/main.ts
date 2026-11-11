@@ -1,11 +1,12 @@
-import './style.css';
-import { mountLayout } from './layout.ts';
+import './ui/style.css';
+import { mountLayout } from './ui/layout.ts';
 import { lects } from './lects/index.ts';
-import { renderOptions } from './options-panel.ts';
-import { defaults, type Settings } from './options.ts';
-import { present } from './present.ts';
-import { copyText, renderMessage, renderResults } from './render.ts';
-import type { Analysis, Lect } from './types.ts';
+import { renderOptions } from './ui/options-panel.ts';
+import { defaults, type Settings } from './core/options.ts';
+import { present } from './core/present.ts';
+import { copyText } from './core/format.ts';
+import { renderMessage, renderResults } from './ui/render.ts';
+import type { Analysis, Lect } from './core/types.ts';
 
 const { select, input, results, optionsPanel, copyRomanization, copyScript } = mountLayout(
   document.querySelector<HTMLDivElement>('#app')!,
@@ -83,7 +84,7 @@ async function update(): Promise<void> {
 
 function schedule(): void {
   clearTimeout(timer);
-  timer = window.setTimeout(update, 200);
+  timer = window.setTimeout(update, 100);
 }
 
 copyRomanization.addEventListener('click', () => copy(copyRomanization, 'romanization'));

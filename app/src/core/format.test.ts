@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { copyText, units } from './render.ts';
+import { copyText, units } from './format.ts';
 import type { Analysis, Lect } from './types.ts';
 
 const reading = (script: string, romanization: string) => ({

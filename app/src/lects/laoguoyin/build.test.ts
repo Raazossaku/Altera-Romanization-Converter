@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pack, unpack } from '../../lexicon.ts';
+import { pack, unpack } from '../../core/lexicon.ts';
 import { buildLaoguoyin, parseCharacters, parsePhrases } from './build.ts';
 
 const chars = parseCharacters(

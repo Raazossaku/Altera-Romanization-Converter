@@ -1,6 +1,6 @@
-import { dataLoader } from '../../data.ts';
-import { segment } from '../../lexicon.ts';
-import type { Lect } from '../../types.ts';
+import { dataLoader } from '../../core/data.ts';
+import { segment } from '../../core/lexicon.ts';
+import type { Lect } from '../../core/types.ts';
 import { joinPinyin, lgyToPinyin } from './pinyin.ts';
 
 const data = dataLoader('laoguoyin.json');

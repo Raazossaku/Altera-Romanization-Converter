@@ -1,4 +1,4 @@
-import type { Lect } from './types.ts';
+import type { Lect } from '../core/types.ts';
 
 export interface Elements {
   select: HTMLSelectElement;

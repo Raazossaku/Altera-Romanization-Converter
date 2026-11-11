@@ -1,6 +1,6 @@
 import { el } from './dom.ts';
-import { options, type Settings } from './options.ts';
-import type { Lect } from './types.ts';
+import { options, type Settings } from '../core/options.ts';
+import type { Lect } from '../core/types.ts';
 
 export function renderOptions(settings: Settings, lect: Lect, onChange: () => void): HTMLElement {
   const groups = options
