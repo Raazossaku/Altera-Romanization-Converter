@@ -1,5 +1,6 @@
+import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { pack, type Lexicons } from '../src/lexicon.ts';
+import { pack, unpack, type Lexicons } from '../src/lexicon.ts';
 import { buildJosonese } from '../src/lects/josonese/build.ts';
 import { buildLaoguoyin } from '../src/lects/laoguoyin/build.ts';
 
@@ -17,7 +18,11 @@ const builds: Record<string, Lexicons> = {
 };
 
 for (const [name, lexicons] of Object.entries(builds)) {
-  writeFileSync(new URL(name, outDir), JSON.stringify(pack(lexicons)));
+  const json = JSON.stringify(pack(lexicons));
+  const back = unpack(JSON.parse(json));
+  assert.deepEqual(back.chars, lexicons.chars, `${name}: characters changed in packing`);
+  assert.deepEqual(back.phrases, lexicons.phrases, `${name}: phrases changed in packing`);
+  writeFileSync(new URL(name, outDir), json);
 }
 
 console.log(`Wrote ${Object.keys(builds).join(' and ')} to public/generated/`);

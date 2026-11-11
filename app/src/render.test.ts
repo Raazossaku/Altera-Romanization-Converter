@@ -47,6 +47,7 @@ const lect = (scriptSeparator: string, join: string): Lect => ({
   scriptSeparator,
   joinRomanization: (syllables) => syllables.join(join),
   analyze: async () => [],
+  release: () => {},
 });
 
 describe('copyText', () => {

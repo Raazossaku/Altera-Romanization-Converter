@@ -14,6 +14,7 @@ describe('lect registry', () => {
       expect(typeof lect.scriptSeparator).toBe('string');
       expect(typeof lect.joinRomanization).toBe('function');
       expect(typeof lect.analyze).toBe('function');
+      expect(typeof lect.release).toBe('function');
     }
   });
 });

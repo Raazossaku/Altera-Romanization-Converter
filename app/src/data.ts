@@ -1,6 +1,11 @@
 import { unpack, type LexiconFile, type Lexicons } from './lexicon.ts';
 
-export function dataLoader(file: string): () => Promise<Lexicons> {
+export interface DataLoader {
+  load(): Promise<Lexicons>;
+  release(): void;
+}
+
+export function dataLoader(file: string): DataLoader {
   let loading: Promise<Lexicons> | null = null;
 
   async function fetchData(): Promise<Lexicons> {
@@ -11,11 +16,16 @@ export function dataLoader(file: string): () => Promise<Lexicons> {
     return unpack((await response.json()) as LexiconFile);
   }
 
-  return () => {
-    loading ??= fetchData();
-    loading.catch(() => {
+  return {
+    load() {
+      const current = (loading ??= fetchData());
+      current.catch(() => {
+        if (loading === current) loading = null;
+      });
+      return current;
+    },
+    release() {
       loading = null;
-    });
-    return loading;
+    },
   };
 }

@@ -3,7 +3,7 @@ import { segment } from '../../lexicon.ts';
 import type { Lect } from '../../types.ts';
 import { joinPinyin, lgyToPinyin } from './pinyin.ts';
 
-const loadData = dataLoader('laoguoyin.json');
+const data = dataLoader('laoguoyin.json');
 
 export const laoguoyin: Lect = {
   id: 'laoguoyin',
@@ -13,8 +13,9 @@ export const laoguoyin: Lect = {
   scriptSeparator: ' ',
   hasRarity: true,
   joinRomanization: joinPinyin,
+  release: data.release,
   async analyze(input) {
-    const { chars, phrases } = await loadData();
+    const { chars, phrases } = await data.load();
     return segment(input, chars, phrases).map(({ text, candidates }) => ({
       text,
       readings: candidates.map((c) => ({ ...c, romanization: lgyToPinyin(c.script) })),

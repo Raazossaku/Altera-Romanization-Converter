@@ -74,7 +74,7 @@ export function buildJosonese(hanjaText: string): Lexicons {
   }
   const phrases = new Map<string, Candidate[]>();
   for (const [key, set] of found) {
-    phrases.set(key, [...set].map((reading) => candidate(reading)));
+    phrases.set(key, [...set].map(candidate));
   }
 
   return { chars: createLexicon(chars), phrases: createLexicon(phrases) };

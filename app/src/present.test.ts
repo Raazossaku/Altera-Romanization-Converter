@@ -11,6 +11,7 @@ const lect = (hasRarity: boolean): Lect => ({
   hasRarity,
   joinRomanization: (syllables) => syllables.join(''),
   analyze: async () => [],
+  release: () => {},
 });
 
 const reading = (romanization: string, rare: boolean) => ({

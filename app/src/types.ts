@@ -22,4 +22,5 @@ export interface Lect {
   hasRarity?: boolean;
   joinRomanization: (syllables: string[]) => string;
   analyze(input: string): Promise<Analysis[]>;
+  release(): void;
 }
